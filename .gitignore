@@ -9,6 +9,10 @@ __pycache__/
 # 爬蟲輸出
 bids.csv
 
+# Node
+frontend/node_modules/
+frontend/dist/
+
 # IDE
 .vscode/
 .idea/
