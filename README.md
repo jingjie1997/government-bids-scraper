@@ -1,28 +1,30 @@
 # 政府標案爬蟲系統
 
-自動爬取台灣[政府電子採購網（PCC）](https://web.pcc.gov.tw)的勞務類標案，篩選軟體開發相關案件，並提供 REST API 供前端呼叫。
+自動爬取台灣[政府電子採購網（PCC）](https://web.pcc.gov.tw)的勞務類標案，篩選軟體開發相關案件，透過 React 前端介面顯示結果並支援 CSV 下載。
 
 ## 功能
 
-- 爬取勞務類 842（軟體執行服務）、等標期內的所有標案
-- 依關鍵字過濾：**系統開發、系統維運、系統建置、專案建置**
+- 爬取勞務類 842（軟體執行服務）、等標期內的所有標案（自動翻頁）
+- 依關鍵字過濾：**系統開發、系統維運、系統建置、專案建置、維護、維運**
 - 繞過 PCC `pageCode2Img` 圖片反爬機制，直接從 HTML 提取標案名稱
-- 提供 REST API：觸發爬蟲、回傳 JSON、下載 CSV
+- React 前端介面：爬取按鈕、標案表格、CSV 下載
+- REST API：供前端或第三方工具呼叫
 
 ## 技術架構
 
 | 層級 | 技術 |
 |------|------|
-| 後端 | Python 3 · FastAPI · requests · BeautifulSoup4 |
-| 前端 | React（開發中） |
+| 後端 | Python 3 · FastAPI · requests · BeautifulSoup4 · pandas |
+| 前端 | React · Vite |
 
 ## 快速開始
 
 ### 環境需求
 
 - Python 3.9+
+- Node.js 18+
 
-### 安裝
+### 後端安裝與啟動
 
 ```bash
 cd backend
@@ -35,17 +37,32 @@ venv\Scripts\activate
 source venv/bin/activate
 
 pip install -r requirements.txt
-```
 
-### 啟動後端
-
-```bash
 # 必須在 backend/ 目錄下執行
-cd backend
 uvicorn main:app --reload
 ```
 
-伺服器啟動於 `http://127.0.0.1:8000`
+後端啟動於 `http://127.0.0.1:8000`
+
+### 前端安裝與啟動
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+前端啟動於 `http://localhost:5173`（若 port 被占用會自動遞增）
+
+> 前端透過 Vite proxy 轉發 `/api` 請求至後端，請確保後端已先啟動。
+
+## 使用方式
+
+1. 啟動後端與前端
+2. 開啟瀏覽器前往 `http://localhost:5173`
+3. 點擊「爬取標案」按鈕
+4. 等待爬取完成，結果以表格顯示
+5. 點擊「下載 CSV」儲存資料
 
 ## API 端點
 
@@ -54,16 +71,6 @@ uvicorn main:app --reload
 | `GET` | `/api/ping` | 健康檢查 |
 | `POST` | `/api/scrape` | 觸發爬蟲，回傳標案 JSON |
 | `GET` | `/api/download-csv` | 下載最近一次爬取結果（CSV） |
-
-### 範例
-
-```bash
-# 觸發爬蟲
-curl -X POST http://127.0.0.1:8000/api/scrape
-
-# 下載 CSV
-curl http://127.0.0.1:8000/api/download-csv -o bids.csv
-```
 
 ### 回傳格式（/api/scrape）
 
@@ -74,7 +81,7 @@ curl http://127.0.0.1:8000/api/download-csv -o bids.csv
       "index": 1,
       "agency": "某政府機關",
       "bid_number": "113-001",
-      "bid_name": "系統開發採購案",
+      "bid_name": "系統維運服務採購案",
       "procurement_method": "公開招標",
       "announcement_date": "2026/06/01",
       "deadline": "2026/06/30",
@@ -91,8 +98,14 @@ curl http://127.0.0.1:8000/api/download-csv -o bids.csv
 government_bids_scraper/
 ├── backend/
 │   ├── main.py          # FastAPI 應用程式與 API 端點
-│   ├── scraper.py       # PCC 爬蟲邏輯
+│   ├── scraper.py       # PCC 爬蟲邏輯（含翻頁、關鍵字過濾）
 │   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx      # 主頁面元件
+│   │   └── BidsTable.jsx # 標案表格元件
+│   ├── vite.config.js   # Vite 設定（含 /api proxy）
+│   └── package.json
 ├── openspec/            # 規格文件（OpenSpec 工作流）
 │   ├── config.yaml
 │   ├── specs/           # 主規格庫
@@ -103,5 +116,4 @@ government_bids_scraper/
 ## 注意事項
 
 - 本工具僅供學術研究與個人使用，請遵守 PCC 網站使用規範
-- 爬蟲每次搜尋涵蓋過去 90 天內公告的等標期內標案
-- 前端（React）開發中，目前可直接呼叫 API 或等待前端完成
+- 爬蟲涵蓋過去 90 天內公告、目前仍在等標期內的標案，翻頁間加入隨機延遲避免對伺服器造成壓力
