@@ -132,15 +132,27 @@ def parse_bids(html: str) -> List[Dict]:
 
 def scrape_all() -> List[Dict]:
     """
-    爬取勞務類 842 等標期內全部標案，再依關鍵字過濾標案名稱。
+    爬取勞務類 842 等標期內全部標案（自動翻頁），再依關鍵字過濾標案名稱。
+    若某頁回傳筆數小於 pageSize，代表已是最後一頁。
     """
     session = requests.Session()
     session.get(INDEX_URL, headers=HEADERS, timeout=30)
 
-    html = fetch_page(session, page=1)
-    all_bids = parse_bids(html)
+    all_bids: List[Dict] = []
+    page = 1
+    page_size = 100
 
-    # 依關鍵字過濾：標案名稱含任一關鍵字即保留
+    while True:
+        html = fetch_page(session, page=page)
+        bids = parse_bids(html)
+        all_bids.extend(bids)
+
+        if len(bids) < page_size:
+            break
+
+        page += 1
+        time.sleep(random.uniform(0.5, 1.5))
+
     filtered = [
         bid for bid in all_bids
         if any(kw in bid["bid_name"] for kw in KEYWORDS)
