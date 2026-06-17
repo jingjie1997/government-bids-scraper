@@ -110,12 +110,12 @@ def download_csv():
         )
 
     df = pd.DataFrame(_cached_bids).rename(columns=COLUMN_MAP)
-    output = io.StringIO()
+    output = io.BytesIO()
     df.to_csv(output, index=False, encoding="utf-8-sig")
     output.seek(0)
 
     return StreamingResponse(
-        iter([output.getvalue()]),
+        output,
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=bids.csv"},
     )
