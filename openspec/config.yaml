@@ -1,0 +1,39 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context: |
+  ## 專案名稱
+  政府標案爬蟲系統（Government Bids Scraper）
+
+  ## 目標
+  爬取台灣政府電子採購網（PCC）的勞務類標案資料，分類代碼 842（軟體執行服務），
+  涵蓋「系統開發、系統維運、系統建置、專案建置」，日期條件選擇「標期內」。
+  目標網址：https://web.pcc.gov.tw/prkms/tender/common/proctrg/indexTenderProctrg
+
+  ## 技術架構
+  - 前後端分離架構
+  - 後端：Python（負責爬蟲邏輯與 API）
+  - 前端：React（負責資料顯示與使用者互動）
+
+  ## 核心功能
+  1. 前端提供「爬取標案」按鈕，使用者點擊後觸發後端爬蟲
+  2. 爬取完成後，資料以表格形式顯示在前端頁面
+  3. 提供「下載 CSV」按鈕，讓使用者將資料存成 CSV 檔案
+
+  ## 資料欄位
+  - 項次、機關名稱、標案案號、標案名稱、招標方式、公告日期、截止投標日期、預算金額
+
+  ## 慣例
+  - 後端使用 RESTful API 提供資料給前端
+  - 前端呼叫後端 API 取得資料並渲染表格
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+rules:
+  proposal:
+    - 以繁體中文撰寫
+    - 明確說明爬蟲的篩選條件（勞務類 842、標期內）標案名稱關鍵字模糊搜尋包含「系統開發、系統維運、系統建置、專案建置」
+  tasks:
+    - 每個任務控制在合理範圍，前後端任務分開列出
+    - 以繁體中文撰寫任務描述
