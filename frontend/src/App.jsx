@@ -2,10 +2,13 @@ import { useState } from 'react'
 import BidsTable from './BidsTable'
 import './App.css'
 
+const KEYWORDS = ['設備', '機房', '醫院', '儀器']
+
 export default function App() {
   const [loading, setLoading] = useState(false)
   const [bids, setBids] = useState(null)
   const [error, setError] = useState(null)
+  const [activeKeywords, setActiveKeywords] = useState(new Set())
 
   async function handleScrape() {
     setLoading(true)
@@ -25,11 +28,41 @@ export default function App() {
     }
   }
 
-  function handleDownload() {
-    window.location.href = '/api/download-csv'
+  function toggleKeyword(keyword) {
+    setActiveKeywords(prev => {
+      const next = new Set(prev)
+      if (next.has(keyword)) {
+        next.delete(keyword)
+      } else {
+        next.add(keyword)
+      }
+      return next
+    })
   }
 
-  const hasData = bids !== null && bids.length > 0
+  const filteredBids =
+    bids === null
+      ? null
+      : activeKeywords.size === 0
+        ? bids
+        : bids.filter(bid => [...activeKeywords].some(kw => bid.bid_name?.includes(kw)))
+
+  function handleDownload() {
+    if (!filteredBids || filteredBids.length === 0) return
+    const headers = ['項次', '機關名稱', '標案案號', '標案名稱', '招標方式', '公告日期', '截止投標日期', '預算金額']
+    const keys = ['index', 'agency', 'bid_number', 'bid_name', 'procurement_method', 'announcement_date', 'deadline', 'budget']
+    const rows = [headers, ...filteredBids.map(bid => keys.map(k => bid[k] ?? ''))]
+    const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\r\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'bids.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const hasData = filteredBids !== null && filteredBids.length > 0
 
   return (
     <div className="app">
@@ -52,14 +85,31 @@ export default function App() {
         </button>
       </div>
 
+      <div className="filter-buttons">
+        {KEYWORDS.map(kw => (
+          <button
+            key={kw}
+            className={`btn-keyword${activeKeywords.has(kw) ? ' active' : ''}`}
+            onClick={() => toggleKeyword(kw)}
+          >
+            {kw}
+          </button>
+        ))}
+      </div>
+
       {error && <div className="error">{error}</div>}
 
-      {bids !== null && (
+      {filteredBids !== null && (
         <>
-          {hasData && (
-            <p className="count">共 {bids.length} 筆標案</p>
+          {filteredBids.length > 0 && (
+            <p className="count">
+              共 {filteredBids.length} 筆標案
+              {activeKeywords.size > 0 && bids && filteredBids.length < bids.length
+                ? `（篩選自 ${bids.length} 筆）`
+                : ''}
+            </p>
           )}
-          <BidsTable bids={bids} />
+          <BidsTable bids={filteredBids} />
         </>
       )}
     </div>
