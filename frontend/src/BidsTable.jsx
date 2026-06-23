@@ -27,7 +27,7 @@ export default function BidsTable({ bids }) {
         {bids.map((bid, i) => (
           <tr key={bid.bid_number || i}>
             {COLUMNS.map((col) => (
-              <td key={col.key}>{bid[col.key]}</td>
+              <td key={col.key}>{col.key === 'index' ? i + 1 : bid[col.key]}</td>
             ))}
           </tr>
         ))}
