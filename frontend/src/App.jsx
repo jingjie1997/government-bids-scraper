@@ -45,13 +45,13 @@ export default function App() {
       ? null
       : activeKeywords.size === 0
         ? bids
-        : bids.filter(bid => [...activeKeywords].some(kw => bid.bid_name?.includes(kw)))
+        : bids.filter(bid => ![...activeKeywords].some(kw => bid.bid_name?.includes(kw)))
 
   function handleDownload() {
     if (!filteredBids || filteredBids.length === 0) return
     const headers = ['項次', '機關名稱', '標案案號', '標案名稱', '招標方式', '公告日期', '截止投標日期', '預算金額']
     const keys = ['index', 'agency', 'bid_number', 'bid_name', 'procurement_method', 'announcement_date', 'deadline', 'budget']
-    const rows = [headers, ...filteredBids.map(bid => keys.map(k => bid[k] ?? ''))]
+    const rows = [headers, ...filteredBids.map((bid, i) => keys.map(k => k === 'index' ? i + 1 : (bid[k] ?? '')))]
     const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\r\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -85,16 +85,19 @@ export default function App() {
         </button>
       </div>
 
-      <div className="filter-buttons">
-        {KEYWORDS.map(kw => (
-          <button
-            key={kw}
-            className={`btn-keyword${activeKeywords.has(kw) ? ' active' : ''}`}
-            onClick={() => toggleKeyword(kw)}
-          >
-            {kw}
-          </button>
-        ))}
+      <div className="filter-section">
+        <span className="filter-label">排除含以下關鍵字的標案：</span>
+        <div className="filter-buttons">
+          {KEYWORDS.map(kw => (
+            <button
+              key={kw}
+              className={`btn-keyword${activeKeywords.has(kw) ? ' active' : ''}`}
+              onClick={() => toggleKeyword(kw)}
+            >
+              {activeKeywords.has(kw) ? `✕ ${kw}` : kw}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}
@@ -105,7 +108,7 @@ export default function App() {
             <p className="count">
               共 {filteredBids.length} 筆標案
               {activeKeywords.size > 0 && bids && filteredBids.length < bids.length
-                ? `（篩選自 ${bids.length} 筆）`
+                ? `（已排除 ${bids.length - filteredBids.length} 筆，共 ${bids.length} 筆）`
                 : ''}
             </p>
           )}
