@@ -2,7 +2,12 @@ import { useState } from 'react'
 import BidsTable from './BidsTable'
 import './App.css'
 
-const KEYWORDS = ['設備', '機房', '醫院', '儀器']
+const KEYWORDS = [
+  { label: '設備', fields: ['bid_name'] },
+  { label: '機房', fields: ['bid_name'] },
+  { label: '醫院', fields: ['bid_name', 'agency'] },
+  { label: '儀器', fields: ['bid_name'] },
+]
 
 export default function App() {
   const [loading, setLoading] = useState(false)
@@ -45,7 +50,12 @@ export default function App() {
       ? null
       : activeKeywords.size === 0
         ? bids
-        : bids.filter(bid => ![...activeKeywords].some(kw => bid.bid_name?.includes(kw)))
+        : bids.filter(bid =>
+            ![...activeKeywords].some(kw => {
+              const config = KEYWORDS.find(k => k.label === kw)
+              return config.fields.some(field => bid[field]?.includes(kw))
+            })
+          )
 
   function handleDownload() {
     if (!filteredBids || filteredBids.length === 0) return
@@ -88,13 +98,13 @@ export default function App() {
       <div className="filter-section">
         <span className="filter-label">排除含以下關鍵字的標案：</span>
         <div className="filter-buttons">
-          {KEYWORDS.map(kw => (
+          {KEYWORDS.map(({ label }) => (
             <button
-              key={kw}
-              className={`btn-keyword${activeKeywords.has(kw) ? ' active' : ''}`}
-              onClick={() => toggleKeyword(kw)}
+              key={label}
+              className={`btn-keyword${activeKeywords.has(label) ? ' active' : ''}`}
+              onClick={() => toggleKeyword(label)}
             >
-              {activeKeywords.has(kw) ? `✕ ${kw}` : kw}
+              {activeKeywords.has(label) ? `✕ ${label}` : label}
             </button>
           ))}
         </div>
